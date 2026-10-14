@@ -1,0 +1,43 @@
+@base = http://localhost:5080
+@org = 00000000-0000-0000-0000-000000000000
+@workOrder = 00000000-0000-0000-0000-000000000000
+
+### CSRF
+GET {{base}}/api/auth/csrf
+
+### Login
+POST {{base}}/api/auth/login
+Content-Type: application/json
+X-XSRF-TOKEN: {{csrf}}
+
+{
+  "email": "admin.northwind@opsflow.example",
+  "password": "set-from-local-configuration"
+}
+
+### Current user
+GET {{base}}/api/auth/me
+
+### Work orders
+GET {{base}}/api/organizations/{{org}}/work-orders?page=1&pageSize=25&sort=createdAt&direction=desc&status=Open
+
+### Create
+POST {{base}}/api/organizations/{{org}}/work-orders
+Content-Type: application/json
+X-XSRF-TOKEN: {{csrf}}
+Idempotency-Key: demo-create-0001
+
+{
+  "title": "Lobby HVAC is warm",
+  "description": "East lobby unit is not cooling.",
+  "category": "HVAC",
+  "priority": "High"
+}
+
+### Claim
+POST {{base}}/api/organizations/{{org}}/work-orders/{{workOrder}}/claim
+X-XSRF-TOKEN: {{csrf}}
+Idempotency-Key: demo-claim-0001
+
+### Report
+GET {{base}}/api/organizations/{{org}}/reports/summary?from=2026-01-01T00:00:00Z&to=2026-12-31T00:00:00Z

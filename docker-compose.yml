@@ -1,0 +1,64 @@
+# Default command starts only Mailpit.
+# Do not start the SQL Server profile when using Azure SQL.
+# SQL Server 2022 containers are linux/amd64. Docker Desktop on Apple Silicon
+# emulates that image. Microsoft does not officially support that emulation, and the container may fail to start.
+
+services:
+  mailpit:
+    image: axllent/mailpit:v1.21.8
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  sqlserver:
+    profiles: ["sql"]
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?set SQL_SA_PASSWORD in .env}
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__OpsFlow: ${ConnectionStrings__OpsFlow:?set the API connection string}
+      Attachments__Provider: Local
+      Attachments__LocalPath: /app/data/attachments
+      DataProtection__KeysPath: /app/data/keys
+      Smtp__Host: mailpit
+      Smtp__Port: "1025"
+      Seed__DemoPassword: ${Seed__DemoPassword:-}
+    ports:
+      - "5080:8080"
+    volumes:
+      - opsflow-data:/app/data
+    depends_on:
+      - mailpit
+
+  worker:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      ConnectionStrings__OpsFlow: ${ConnectionStrings__OpsFlow:?set the worker connection string}
+      Smtp__Host: mailpit
+      Smtp__Port: "1025"
+    depends_on:
+      - mailpit
+
+volumes:
+  opsflow-data:

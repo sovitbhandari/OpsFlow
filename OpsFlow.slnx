@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/OpsFlow.Benchmark/OpsFlow.Benchmark.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/OpsFlow.Api/OpsFlow.Api.csproj" />
+    <Project Path="src/OpsFlow.Application/OpsFlow.Application.csproj" />
+    <Project Path="src/OpsFlow.Domain/OpsFlow.Domain.csproj" />
+    <Project Path="src/OpsFlow.Infrastructure/OpsFlow.Infrastructure.csproj" />
+    <Project Path="src/OpsFlow.Worker/OpsFlow.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OpsFlow.IntegrationTests/OpsFlow.IntegrationTests.csproj" />
+    <Project Path="tests/OpsFlow.UnitTests/OpsFlow.UnitTests.csproj" />
+    <Project Path="tests/OpsFlow.WorkerTests/OpsFlow.WorkerTests.csproj" />
+  </Folder>
+</Solution>

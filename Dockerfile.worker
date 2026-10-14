@@ -1,0 +1,17 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0.402 AS build
+WORKDIR /src
+COPY global.json Directory.Build.props Directory.Packages.props ./
+COPY src/OpsFlow.Domain/packages.lock.json src/OpsFlow.Domain/
+COPY src/OpsFlow.Application/packages.lock.json src/OpsFlow.Application/
+COPY src/OpsFlow.Infrastructure/packages.lock.json src/OpsFlow.Infrastructure/
+COPY src/OpsFlow.Worker/packages.lock.json src/OpsFlow.Worker/
+COPY src/OpsFlow.Domain/ src/OpsFlow.Domain/
+COPY src/OpsFlow.Application/ src/OpsFlow.Application/
+COPY src/OpsFlow.Infrastructure/ src/OpsFlow.Infrastructure/
+COPY src/OpsFlow.Worker/ src/OpsFlow.Worker/
+RUN dotnet publish src/OpsFlow.Worker/OpsFlow.Worker.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.13 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "OpsFlow.Worker.dll"]

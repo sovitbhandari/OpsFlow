@@ -1,0 +1,31 @@
+trigger:
+  branches:
+    include: [main]
+
+pr:
+  branches:
+    include: [main]
+
+pool:
+  vmImage: ubuntu-24.04
+
+steps:
+  - task: UseDotNet@2
+    inputs:
+      packageType: sdk
+      version: 10.0.402
+  - task: NodeTool@0
+    inputs:
+      versionSpec: 22.x
+  - script: bash scripts/validate.sh
+    displayName: Build, unit tests, and frontend
+  - script: |
+      set -euo pipefail
+      export OPSFLOW_USE_TESTCONTAINERS=true
+      dotnet test tests/OpsFlow.IntegrationTests
+      dotnet test tests/OpsFlow.WorkerTests
+    displayName: SQL Server integration tests
+  - script: |
+      docker build -f Dockerfile.api -t opsflow-api:ci .
+      docker build -f Dockerfile.worker -t opsflow-worker:ci .
+    displayName: Container images

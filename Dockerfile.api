@@ -1,0 +1,27 @@
+FROM node:22.16.0-bookworm-slim AS web
+WORKDIR /web
+COPY src/opsflow-web/package.json src/opsflow-web/package-lock.json ./
+RUN npm ci
+COPY src/opsflow-web/ ./
+RUN npm run build
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0.402 AS build
+WORKDIR /src
+COPY global.json Directory.Build.props Directory.Packages.props ./
+COPY src/OpsFlow.Domain/packages.lock.json src/OpsFlow.Domain/
+COPY src/OpsFlow.Application/packages.lock.json src/OpsFlow.Application/
+COPY src/OpsFlow.Infrastructure/packages.lock.json src/OpsFlow.Infrastructure/
+COPY src/OpsFlow.Api/packages.lock.json src/OpsFlow.Api/
+COPY src/OpsFlow.Domain/ src/OpsFlow.Domain/
+COPY src/OpsFlow.Application/ src/OpsFlow.Application/
+COPY src/OpsFlow.Infrastructure/ src/OpsFlow.Infrastructure/
+COPY src/OpsFlow.Api/ src/OpsFlow.Api/
+RUN dotnet publish src/OpsFlow.Api/OpsFlow.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
+COPY --from=web /web/dist/ /app/publish/wwwroot/
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.13 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "OpsFlow.Api.dll"]

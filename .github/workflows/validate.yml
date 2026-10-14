@@ -1,0 +1,45 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.402"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/opsflow-web/package-lock.json
+      - name: Build, unit tests, and frontend
+        run: bash scripts/validate.sh
+
+  integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.402"
+      - name: SQL Server integration tests
+        env:
+          OPSFLOW_USE_TESTCONTAINERS: "true"
+        run: |
+          dotnet test tests/OpsFlow.IntegrationTests
+          dotnet test tests/OpsFlow.WorkerTests
+
+  containers:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API and worker images
+        run: |
+          docker build -f Dockerfile.api -t opsflow-api:ci .
+          docker build -f Dockerfile.worker -t opsflow-worker:ci .
